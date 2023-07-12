@@ -11,7 +11,9 @@ import logging
 import os
 import pathlib
 import shutil
+import sys
 
+IS_PY31X = sys.version_info[:2] >= (3, 10)
 
 IS_WINDOWS = os.name == 'nt'
 
@@ -92,6 +94,8 @@ class WindowsPath2(SharedPathMethods, pathlib.WindowsPath):
             elif args[0].startswith("\\\\?\\"):
                 args[0] = args[0][4:]
             args = tuple(args)
+        if IS_PY31X:
+            return super(WindowsPath2, cls)._from_parts(args)
         return super(WindowsPath2, cls)._from_parts(args, init)
 
     @property
@@ -137,11 +141,15 @@ class Path2(pathlib.Path):
     def __new__(cls, *args, **kwargs):
         if cls is Path2 or cls is pathlib.Path:
             cls = WindowsPath2 if IS_WINDOWS else PosixPath2
-        self = cls._from_parts(args, init=False)
+        if IS_PY31X:
+            self = cls._from_parts(args)
+        else:
+            self = cls._from_parts(args, init=False)
         if not self._flavour.is_supported:
             raise NotImplementedError("cannot instantiate %r on your system"
                                       % (cls.__name__,))
-        self._init()
+        if not IS_PY31X:
+            self._init()
         return self
 
     @classmethod
