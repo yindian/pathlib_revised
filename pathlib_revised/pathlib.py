@@ -95,7 +95,9 @@ class WindowsPath2(SharedPathMethods, pathlib.WindowsPath):
                 args[0] = args[0][4:]
             args = tuple(args)
         if IS_PY31X:
-            return super(WindowsPath2, cls)._from_parts(args)
+            self = super(WindowsPath2, cls).__new__(cls)
+            self.__init__(*args)
+            return self
         return super(WindowsPath2, cls)._from_parts(args, init)
 
     @property
@@ -142,13 +144,13 @@ class Path2(pathlib.Path):
         if cls is Path2 or cls is pathlib.Path:
             cls = WindowsPath2 if IS_WINDOWS else PosixPath2
         if IS_PY31X:
-            self = cls._from_parts(args)
+            self = cls.__new__(cls)
+            self.__init__(*args)
         else:
             self = cls._from_parts(args, init=False)
-        if not self._flavour.is_supported:
-            raise NotImplementedError("cannot instantiate %r on your system"
-                                      % (cls.__name__,))
-        if not IS_PY31X:
+            if not self._flavour.is_supported:
+                raise NotImplementedError("cannot instantiate %r on your system"
+                                          % (cls.__name__,))
             self._init()
         return self
 
